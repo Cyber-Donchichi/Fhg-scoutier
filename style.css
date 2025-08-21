@@ -183,7 +183,7 @@ iframe {
   flex-direction: column;
   gap: 8px;
 }
-
+.danger,
 .primary, 
 .import-btn {
   display: inline-flex;
