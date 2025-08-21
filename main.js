@@ -89,12 +89,13 @@ function deleteAllLinks() {
 
 function exportLinks() {
   const remaining = links.filter((_, i) => !visited.includes(i));
-  const blob = new Blob([JSON.stringify(remaining, null, 2)], { type: "application/json" });
+  const textContent = remaining.join("\n"); // each link on new line
+  const blob = new Blob([textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
   
   const a = document.createElement("a");
   a.href = url;
-  a.download = "scouted_links.json";
+  a.download = "scouted_links.txt"; // Save as TXT
   a.click();
   
   URL.revokeObjectURL(url);
@@ -166,7 +167,7 @@ preview.addEventListener("load", () => {
     }
   } catch (err) {
     console.log("Cross-domain restriction:", err.message);
-    statusEl.textContent = "Contact page may exist (cannot check)";
+    console.log("Contact page may exist (cannot check)");
   }
 });
 
