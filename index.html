@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scouting Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="sologan">FHG Wix Scouting Dashboard</h1>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Saved Links</h2>
+        <span class="counter">0 / 0 links scouted</span>
+        <div class="sidebar-actions">
+          <button class="danger" onclick="deleteAllLinks()">
+            <span class="material-icons">delete_forever</span> Delete All
+          </button>
+          <button class="primary" onclick="exportLinks()">
+            <span class="material-icons">file_download</span> Export
+          </button>
+          <label class="primary import-btn">
+            <span class="material-icons">file_upload</span> Import
+            <input type="file" id="importFile" accept=".json" hidden onchange="importLinks(event)">
+          </label>
+        </div>
+      </div>
+      <ul id="linkList" class="link-list"></ul>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main">
+      <div class="card input-card">
+        <textarea id="urlInput" placeholder="Paste one or multiple links here..."></textarea>
+        <button class="primary" onclick="addLink()">
+          <span class="material-icons">add_link</span> Save Links
+        </button>
+      </div>
+
+      <div class="card viewer">
+        <div class="viewer-controls">
+          <button onclick="prevLink()"><span class="material-icons">arrow_back</span> Prev</button>
+          <button onclick="nextLink()">Next <span class="material-icons">arrow_forward</span></button>
+        </div>
+        <iframe id="preview" src=""></iframe>
+      </div>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
