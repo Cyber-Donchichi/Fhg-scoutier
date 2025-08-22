@@ -70,9 +70,9 @@ function nextLink() {
   }
 }
 
-function prevLink() {
-  for (let i = currentIndex - 1; i >= 0; i--) {
-    if (!visited.includes(i)) return openLink(i);
+function refreshIframe() {
+  if (preview.src) {
+    preview.src = preview.src; // reload iframe
   }
 }
 
@@ -104,25 +104,38 @@ function exportLinks() {
 function importLinks(event) {
   const file = event.target.files[0];
   if (!file) return;
-  
+
   const reader = new FileReader();
+  const ext = file.name.split('.').pop().toLowerCase();
+
   reader.onload = e => {
     try {
-      const imported = JSON.parse(e.target.result);
-      if (Array.isArray(imported)) {
-        imported.forEach(url => {
-          if (!links.includes(url)) links.push(url);
-        });
-        saveData();
-        renderLinks();
-        alert("Links imported successfully!");
-      } else {
-        alert("Invalid file format.");
+      let imported = [];
+
+      if (ext === "json") {
+        imported = JSON.parse(e.target.result);
+        if (!Array.isArray(imported)) throw new Error("Invalid JSON format");
+      } 
+      else if (ext === "txt" || ext === "pdf") {
+        imported = e.target.result.split(/[\n,\s]+/).filter(Boolean);
       }
-    } catch {
-      alert("Error reading file.");
+
+      imported.forEach(url => {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+          url = "https://" + url;
+        }
+        if (!links.includes(url)) links.push(url);
+      });
+
+      saveData();
+      renderLinks();
+      alert("Links imported successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Error importing file.");
     }
   };
+
   reader.readAsText(file);
 }
 
