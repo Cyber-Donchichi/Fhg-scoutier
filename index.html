@@ -10,7 +10,7 @@
 </head>
 <body>
   <header class="topbar">
-    <h1 class="sologan">FHG Wix Scouting Dashboard</h1>
+    <h1 class="sologan">FHG Wix Scoutier</h1>
   </header>
 
   <div class="layout">
@@ -28,7 +28,7 @@
           </button>
           <label class="primary import-btn">
             <span class="material-icons">file_upload</span> Import
-            <input type="file" id="importFile" accept=".json" hidden onchange="importLinks(event)">
+            <input type="file" id="importFile" accept=".json,.txt,.pdf" hidden onchange="importLinks(event)">
           </label>
         </div>
       </div>
@@ -46,8 +46,12 @@
 
       <div class="card viewer">
         <div class="viewer-controls">
-          <button onclick="prevLink()"><span class="material-icons">arrow_back</span> Prev</button>
-          <button onclick="nextLink()">Next <span class="material-icons">arrow_forward</span></button>
+          <button onclick="refreshIframe()">
+            <span class="material-icons">refresh</span> Refresh
+          </button>
+          <button onclick="nextLink()">
+            Next <span class="material-icons">arrow_forward</span>
+          </button>
         </div>
         <iframe id="preview" src=""></iframe>
       </div>
