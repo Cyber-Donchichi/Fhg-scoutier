@@ -1,146 +1,97 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>FHG Wix Scouting Dashboard</title>
-  <link rel="stylesheet" href="style.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Scout</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
 </head>
-<body>
-  <!-- Topbar -->
-  <header class="topbar">
-    <button class="icon ghost" id="sidebarToggle" aria-label="Toggle sidebar">
-      <i class="fa-solid fa-bars"></i>
-    </button>
-    <div class="brand">
-      <div class="logo">FHG</div>
-      <h1>Wix Scouting Dashboard</h1>
-    </div>
-    <div class="top-actions">
-      <div class="kbd" title="Shortcuts: N = Next, R = Refresh">N / R</div>
-      <div class="theme-toggle" title="Toggle dark / light">
-        <input type="checkbox" id="themeSwitch" aria-label="Dark mode"/>
-        <label for="themeSwitch">
-          <i class="fa-regular fa-sun"></i>
-          <i class="fa-solid fa-moon"></i>
-        </label>
-      </div>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-500">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between p-4 bg-indigo-600 dark:bg-indigo-800 shadow-lg">
+    <h1 class="text-xl font-bold flex items-center gap-2">
+      <i class="fas fa-globe"></i> Smart Scout
+    </h1>
+    <div class="flex items-center gap-3">
+      <!-- Translate -->
+      <button onclick="translateToEnglish()" class="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white shadow transition">
+        <i class="fas fa-language"></i> English
+      </button>
+
+      <!-- Theme toggle -->
+      <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:scale-110 transition">
+        <i class="fas fa-moon dark:hidden"></i>
+        <i class="fas fa-sun hidden dark:inline"></i>
+      </button>
     </div>
   </header>
 
-  <!-- Split layout -->
-  <div class="layout">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="panel">
-        <div class="panel-head">
-          <h2><i class="fa-regular fa-bookmark"></i> Saved Links</h2>
-          <span class="counter">0 / 0</span>
-        </div>
-
-        <div class="button-grid">
-          <button class="btn brand" id="toggleInfoBtn" title="Show / Hide info above iframe">
-            <i class="fa-regular fa-eye-slash" id="toggleInfoIcon"></i><span>Toggle Info</span>
-          </button>
-          <button class="btn success" onclick="nextLink()" title="Next unvisited (N)">
-            <i class="fa-solid fa-forward-step"></i><span>Next</span>
-          </button>
-          <button class="btn success" onclick="refreshIframe()" title="Refresh iframe (R)">
-            <i class="fa-solid fa-rotate-right"></i><span>Refresh</span>
-          </button>
-          <label class="btn brand import" title="Import .json, .txt, .pdf">
-            <i class="fa-solid fa-file-arrow-up"></i><span>Import</span>
-            <input type="file" id="importFile" accept=".json,.txt,.pdf" hidden onchange="importLinks(event)">
-          </label>
-          <button class="btn brand" onclick="exportLinksTXT()" title="Export remaining as .txt">
-            <i class="fa-solid fa-file-arrow-down"></i><span>Export TXT</span>
-          </button>
-          <button class="btn brand" onclick="exportLinksJSON()" title="Export all as .json">
-            <i class="fa-solid fa-file-code"></i><span>Export JSON</span>
-          </button>
-          <button class="btn danger" onclick="deleteAllLinks()">
-            <i class="fa-solid fa-trash"></i><span>Delete All</span>
-          </button>
-        </div>
+  <!-- Main container -->
+  <main class="p-6 grid md:grid-cols-2 gap-6">
+    <!-- Controls -->
+    <section class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-5">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <i class="fas fa-tools"></i> Controls
+      </h2>
+      <div class="flex flex-wrap gap-3">
+        <input id="urlInput" type="url" placeholder="Enter website URL" class="flex-1 px-3 py-2 rounded-lg border dark:border-gray-700 dark:bg-gray-900" />
+        <button id="addBtn" class="btn-primary"><i class="fas fa-plus"></i> Add</button>
+        <button id="refreshBtn" class="btn-secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button id="nextBtn" class="btn-secondary"><i class="fas fa-forward"></i> Next</button>
       </div>
+    </section>
 
-      <div class="panel">
-        <div class="progress">
-          <div class="bar"><span id="progressFill" style="width:0%"></span></div>
-          <div class="meta">
-            <span id="progressText">0% completed</span>
-          </div>
-        </div>
+    <!-- File Actions -->
+    <section class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-5">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <i class="fas fa-file"></i> Import / Export
+      </h2>
+      <div class="flex flex-wrap gap-3">
+        <input type="file" id="importFile" class="hidden" accept=".json,.txt,.pdf">
+        <label for="importFile" class="btn-secondary cursor-pointer"><i class="fas fa-upload"></i> Import</label>
+        <button id="exportBtn" class="btn-primary"><i class="fas fa-download"></i> Export</button>
       </div>
+    </section>
 
-      <div class="panel">
-        <div class="filters">
-          <div class="input-icon">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="searchInput" type="text" placeholder="Search links, notes, tags..." />
-          </div>
-          <select id="visitedFilter" aria-label="Visited filter">
-            <option value="all">All</option>
-            <option value="not">Not visited</option>
-            <option value="yes">Visited</option>
-          </select>
-          <select id="tagFilter" aria-label="Tag filter">
-            <option value="all">All tags</option>
-          </select>
+    <!-- Saved Links -->
+    <section class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-5 md:col-span-2">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <i class="fas fa-link"></i> Saved Links
+      </h2>
+      <ul id="linkList" class="space-y-2"></ul>
+      <button id="clearBtn" class="mt-3 btn-danger"><i class="fas fa-trash"></i> Clear All</button>
+    </section>
+
+    <!-- Iframe Viewer -->
+    <section class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-5 md:col-span-2">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <i class="fas fa-eye"></i> Website Preview
+      </h2>
+      <div class="relative">
+        <div id="overlay" class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-10">
+          <span class="animate-pulse text-gray-600 dark:text-gray-300"><i class="fas fa-spinner fa-spin"></i> Loading...</span>
         </div>
+        <iframe id="iframeDisplay" class="w-full h-96 rounded-xl border dark:border-gray-700"></iframe>
       </div>
+      <button id="toggleBoxes" class="mt-3 btn-secondary"><i class="fas fa-eye-slash"></i> Hide Boxes</button>
+    </section>
+  </main>
 
-      <ul id="linkList" class="link-list" aria-live="polite"></ul>
-    </aside>
+  <!-- Google Translate hidden element -->
+  <div id="google_translate_element" class="hidden"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement(
+        { pageLanguage: 'en', includedLanguages: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE },
+        'google_translate_element'
+      );
+    }
+  </script>
+  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-    <!-- Main -->
-    <main class="main">
-      <!-- Info area (auto-hide) -->
-      <section id="infoPanel" class="info">
-        <div class="panel">
-          <div class="grid">
-            <div class="stack">
-              <label class="label">Links (paste multiple, newline/space separated)</label>
-              <textarea id="urlInput" placeholder="https://example.com
-https://another.com"></textarea>
-            </div>
-            <div class="stack">
-              <label class="label">Tags (comma separated)</label>
-              <input id="tagsInput" type="text" placeholder="news, research, fhg"/>
-              <label class="label">Note</label>
-              <textarea id="noteInput" placeholder="Short note or next action..."></textarea>
-            </div>
-          </div>
-          <div class="actions">
-            <button class="btn brand" onclick="addLink()">
-              <i class="fa-solid fa-link"></i><span>Save Links</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="panel status">
-          <i class="fa-regular fa-circle-question"></i>
-          <span id="statusText">Load a link to get started.</span>
-        </div>
-      </section>
-
-      <!-- Viewer -->
-      <section class="panel viewer">
-        <div class="viewer-head">
-          <button class="btn success" onclick="refreshIframe()" title="Refresh iframe (R)">
-            <i class="fa-solid fa-rotate-right"></i><span>Refresh</span>
-          </button>
-          <button class="btn success" onclick="nextLink()" title="Next unvisited (N)">
-            <span>Next</span><i class="fa-solid fa-forward-step"></i>
-          </button>
-        </div>
-        <iframe id="preview" src="" loading="lazy" title="Website preview"></iframe>
-      </section>
-    </main>
-  </div>
-
-  <script src="main.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
