@@ -1,8 +1,7 @@
 /***************
- * Data setup
+ * Load / Migrate
  ***************/
 const RAW = JSON.parse(localStorage.getItem("scoutData")) || { links: [], visited: [] };
-// Normalize to new shape
 let links = [];
 if (Array.isArray(RAW.links) && RAW.links.length && typeof RAW.links[0] === "string") {
   const visitedIdx = Array.isArray(RAW.visited) ? RAW.visited : [];
@@ -45,18 +44,18 @@ const tagFilter = document.getElementById("tagFilter");
 let currentIndex = -1;
 
 /***************
- * Theme & sidebar
+ * Theme & Sidebar
  ***************/
 const themeSwitch = document.getElementById("themeSwitch");
 const savedTheme = localStorage.getItem("fhg_theme") || "light";
 document.documentElement.setAttribute("data-theme", savedTheme);
 themeSwitch.checked = savedTheme === "dark";
-themeSwitch.addEventListener("change", () => {
+themeSwitch.addEventListener("change", ()=>{
   const mode = themeSwitch.checked ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", mode);
   localStorage.setItem("fhg_theme", mode);
 });
-document.getElementById("sidebarToggle").addEventListener("click", () => {
+document.getElementById("sidebarToggle").addEventListener("click", ()=>{
   sidebar.classList.toggle("collapsed");
 });
 
@@ -69,9 +68,7 @@ function normalizeUrl(u){
   if (!/^https?:\/\//i.test(s)) s = "https://" + s;
   return s;
 }
-function hostnameFromUrl(u){
-  try { return new URL(u).hostname; } catch { return u; }
-}
+function hostnameFromUrl(u){ try { return new URL(u).hostname; } catch { return u; } }
 function updateStats(){
   const v = links.filter(l => l.visited).length;
   counterEl.textContent = `${v} / ${links.length}`;
@@ -96,14 +93,15 @@ function applyTagFilterOptions(){
  ***************/
 function renderLinks(){
   linkList.innerHTML = "";
+
   const q = (searchInput.value||"").toLowerCase().trim();
-  const vMode = visitedFilter.value; // all|yes|not
-  const tMode = tagFilter.value;     // "all" or tag
+  const vMode = visitedFilter.value; // all | yes | not
+  const tMode = tagFilter.value;     // all or tag
 
   links.forEach((link, index) => {
-    if (vMode==="yes" && !link.visited) return;
-    if (vMode==="not" && link.visited) return;
-    if (tMode!=="all" && !(link.tags||[]).includes(tMode)) return;
+    if (vMode === "yes" && !link.visited) return;
+    if (vMode === "not" && link.visited) return;
+    if (tMode !== "all" && !(link.tags||[]).includes(tMode)) return;
 
     const hay = `${link.url} ${link.title||""} ${link.note||""} ${(link.tags||[]).join(" ")}`.toLowerCase();
     if (q && !hay.includes(q)) return;
@@ -118,11 +116,9 @@ function renderLinks(){
 
     const main = document.createElement("div");
     main.className = "link-main";
-
     const title = document.createElement("div");
     title.className = "link-title";
     title.textContent = link.title || hostnameFromUrl(link.url);
-
     const meta = document.createElement("div");
     meta.className = "link-meta";
     meta.textContent = link.url;
@@ -131,13 +127,12 @@ function renderLinks(){
     badges.className = "tag-badges";
     (link.tags||[]).forEach(t=>{
       const b = document.createElement("span");
-      b.className = "tag"; b.textContent = t;
+      b.className="tag"; b.textContent=t;
       badges.appendChild(b);
     });
 
     const actions = document.createElement("div");
     actions.className = "link-actions";
-
     const openBtn = document.createElement("button");
     openBtn.className = "icon-small";
     openBtn.innerHTML = `<i class="fa-solid fa-up-right-from-square"></i>`;
@@ -169,7 +164,6 @@ function renderLinks(){
   updateStats();
   applyTagFilterOptions();
 }
-
 function renderAll(){ applyTagFilterOptions(); renderLinks(); }
 
 /***************
@@ -193,12 +187,12 @@ function addLink(){
   });
 
   persist(); renderAll();
-  input.value = ""; // keep tags/note for next batch if needed
+  input.value = ""; // keep tags/note for batching
 }
 
 function openLink(index){
   currentIndex = index;
-  hideInfoPanel();               // auto-hide when loading starts
+  hideInfoPanel(); // auto-hide when loading starts
   preview.classList.add("loading");
   preview.src = links[index].url;
 
@@ -215,7 +209,7 @@ function nextLink(){
 
 function refreshIframe(){
   if (preview.src){
-    hideInfoPanel();             // hide when refreshing too
+    hideInfoPanel();
     preview.classList.add("loading");
     preview.src = preview.src;
   }
@@ -231,13 +225,13 @@ function exportLinksTXT(){
   const remaining = links.filter(l=>!l.visited).map(l=>l.url);
   const blob = new Blob([remaining.join("\n")], { type:"text/plain" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download="scouted_links.txt"; a.click();
+  const a = document.createElement("a"); a.href=url; a.download="scouted_links.txt"; a.click();
   URL.revokeObjectURL(url);
 }
 function exportLinksJSON(){
   const blob = new Blob([JSON.stringify({links}, null, 2)], { type:"application/json" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download="scouted_links.json"; a.click();
+  const a = document.createElement("a"); a.href=url; a.download="scouted_links.json"; a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -245,7 +239,6 @@ function importLinks(event){
   const file = event.target.files[0]; if (!file) return;
   const ext = file.name.split(".").pop().toLowerCase();
   const reader = new FileReader();
-
   reader.onload = e => {
     try{
       let imported = [];
@@ -276,15 +269,14 @@ function importLinks(event){
     }catch(err){
       console.error(err); alert("Error importing file.");
     }finally{
-      event.target.value = ""; // reset
+      event.target.value = "";
     }
   };
-
-  reader.readAsText(file); // basic PDF text extraction
+  reader.readAsText(file);
 }
 
 /***************
- * Info panel show/hide
+ * Info Panel Toggle
  ***************/
 function hideInfoPanel(){
   if (!infoPanel.classList.contains("hidden")){
@@ -313,7 +305,7 @@ preview.addEventListener("load", ()=>{
   const i = currentIndex;
   if (i < 0 || !links[i]) return;
 
-  // Try to capture title if same-origin, else hostname
+  // Try to set title (same-origin only)
   try{
     const doc = preview.contentDocument || preview.contentWindow.document;
     if (doc && doc.title){
@@ -322,19 +314,18 @@ preview.addEventListener("load", ()=>{
       statusText.textContent = "Loaded: " + (links[i].title || hostnameFromUrl(links[i].url));
       return;
     }
-  }catch(_) {}
+  }catch(_){}
   statusText.textContent = "Loaded: " + hostnameFromUrl(links[i].url);
 });
 
 /***************
- * Filters + shortcuts
+ * Filters & Shortcuts
  ***************/
 [searchInput, visitedFilter, tagFilter].forEach(el=>{
   el.addEventListener("input", renderLinks);
   el.addEventListener("change", renderLinks);
 });
 
-// Keyboard shortcuts (work globally; disabled while typing)
 document.addEventListener("keydown", (e)=>{
   const tag = (e.target.tagName||"").toUpperCase();
   if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -346,16 +337,5 @@ document.addEventListener("keydown", (e)=>{
 /***************
  * Init
  ***************/
-function initInfoIcon(){ // set icon state on load
-  if (infoPanel.classList.contains("hidden")){
-    toggleInfoIcon.classList.remove("fa-eye");
-    toggleInfoIcon.classList.add("fa-eye-slash");
-  } else {
-    toggleInfoIcon.classList.remove("fa-eye-slash");
-    toggleInfoIcon.classList.add("fa-eye");
-  }
-}
-function renderAllAndInit(){
-  applyTagFilterOptions(); renderLinks(); initInfoIcon();
-}
-renderAllAndInit();
+function renderAll(){ applyTagFilterOptions(); renderLinks(); }
+(function init(){ renderAll(); })();
