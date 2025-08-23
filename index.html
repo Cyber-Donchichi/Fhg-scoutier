@@ -1,83 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iframe Dashboard</title>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- FontAwesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- Google Translate -->
-  <meta name="google" content="notranslate">
-  <script type="text/javascript">
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement(
-        {pageLanguage: 'en', includedLanguages: 'en'},
-        'google_translate_element'
-      );
-    }
-  </script>
-  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>FHG Wix Scouting Dashboard</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 </head>
-<body class="bg-gray-100 text-gray-900">
-
-  <!-- Header -->
-  <header class="flex items-center justify-between p-4 bg-blue-600 text-white shadow">
-    <h1 class="text-lg font-bold flex items-center gap-2">
-      <i class="fa-solid fa-layer-group"></i> FHG Wix Scouteir
-    </h1>
-    <div class="flex gap-3 items-center">
-      <!-- Import -->
-      <label class="cursor-pointer bg-white text-blue-600 px-3 py-1 rounded shadow hover:bg-gray-100">
-        <i class="fa-solid fa-file-import"></i> Import
-        <input type="file" id="importFile" class="hidden" accept=".txt,.json,.pdf">
-      </label>
-      <!-- Export -->
-      <button id="exportBtn" class="bg-white text-blue-600 px-3 py-1 rounded shadow hover:bg-gray-100">
-        <i class="fa-solid fa-file-export"></i> Export
-      </button>
-      <!-- Translate -->
-      <button id="translateBtn" class="bg-white text-blue-600 px-3 py-1 rounded shadow hover:bg-gray-100">
-        <i class="fa-solid fa-language"></i> Translate to English
-      </button>
+<body>
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="icon ghost" id="sidebarToggle" aria-label="Toggle sidebar">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="brand">
+      <div class="logo">FHG</div>
+      <h1>Wix Scouting Dashboard</h1>
+    </div>
+    <div class="top-actions">
+      <div class="kbd" title="Shortcuts: N = Next, R = Refresh">N / R</div>
+      <div class="theme-toggle" title="Toggle dark / light">
+        <input type="checkbox" id="themeSwitch" aria-label="Dark mode"/>
+        <label for="themeSwitch">
+          <i class="fa-regular fa-sun"></i>
+          <i class="fa-solid fa-moon"></i>
+        </label>
+      </div>
     </div>
   </header>
 
-  <!-- Sidebar & Main -->
-  <div class="flex">
+  <!-- Split layout -->
+  <div class="layout">
     <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow p-4 space-y-4">
-      <h2 class="text-lg font-semibold flex items-center gap-2">
-        <i class="fa-solid fa-bookmark"></i> Saved Links
-      </h2>
-      <ul id="linkList" class="space-y-2 text-sm"></ul>
-      <button id="clearBtn" class="w-full bg-red-500 text-white py-1 rounded hover:bg-red-600">
-        <i class="fa-solid fa-trash"></i> Clear All
-      </button>
+    <aside class="sidebar" id="sidebar">
+      <div class="panel">
+        <div class="panel-head">
+          <h2><i class="fa-regular fa-bookmark"></i> Saved Links</h2>
+          <span class="counter">0 / 0</span>
+        </div>
+
+        <div class="button-grid">
+          <button class="btn brand" id="toggleInfoBtn" title="Show / Hide info above iframe">
+            <i class="fa-regular fa-eye-slash" id="toggleInfoIcon"></i><span>Toggle Info</span>
+          </button>
+          <button class="btn success" onclick="nextLink()" title="Next unvisited (N)">
+            <i class="fa-solid fa-forward-step"></i><span>Next</span>
+          </button>
+          <button class="btn success" onclick="refreshIframe()" title="Refresh iframe (R)">
+            <i class="fa-solid fa-rotate-right"></i><span>Refresh</span>
+          </button>
+          <label class="btn brand import" title="Import .json, .txt, .pdf">
+            <i class="fa-solid fa-file-arrow-up"></i><span>Import</span>
+            <input type="file" id="importFile" accept=".json,.txt,.pdf" hidden onchange="importLinks(event)">
+          </label>
+          <button class="btn brand" onclick="exportLinksTXT()" title="Export remaining as .txt">
+            <i class="fa-solid fa-file-arrow-down"></i><span>Export TXT</span>
+          </button>
+          <button class="btn brand" onclick="exportLinksJSON()" title="Export all as .json">
+            <i class="fa-solid fa-file-code"></i><span>Export JSON</span>
+          </button>
+          <button class="btn danger" onclick="deleteAllLinks()">
+            <i class="fa-solid fa-trash"></i><span>Delete All</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="progress">
+          <div class="bar"><span id="progressFill" style="width:0%"></span></div>
+          <div class="meta">
+            <span id="progressText">0% completed</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="filters">
+          <div class="input-icon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="searchInput" type="text" placeholder="Search links, notes, tags..." />
+          </div>
+          <select id="visitedFilter" aria-label="Visited filter">
+            <option value="all">All</option>
+            <option value="not">Not visited</option>
+            <option value="yes">Visited</option>
+          </select>
+          <select id="tagFilter" aria-label="Tag filter">
+            <option value="all">All tags</option>
+          </select>
+        </div>
+      </div>
+
+      <ul id="linkList" class="link-list" aria-live="polite"></ul>
     </aside>
 
-    <!-- Main Iframe -->
-    <main class="flex-1 p-4">
-      <div class="mb-3 flex items-center gap-2">
-        <input type="text" id="urlInput" placeholder="Enter website URL..." 
-               class="flex-1 px-3 py-2 border rounded shadow">
-        <button id="addBtn" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">
-          <i class="fa-solid fa-plus"></i> Add
-        </button>
-      </div>
-      <iframe id="iframeDisplay" class="w-full h-[80vh] border rounded shadow"></iframe>
+    <!-- Main -->
+    <main class="main">
+      <!-- Info area (auto-hide) -->
+      <section id="infoPanel" class="info">
+        <div class="panel">
+          <div class="grid">
+            <div class="stack">
+              <label class="label">Links (paste multiple, newline/space separated)</label>
+              <textarea id="urlInput" placeholder="https://example.com
+https://another.com"></textarea>
+            </div>
+            <div class="stack">
+              <label class="label">Tags (comma separated)</label>
+              <input id="tagsInput" type="text" placeholder="news, research, fhg"/>
+              <label class="label">Note</label>
+              <textarea id="noteInput" placeholder="Short note or next action..."></textarea>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn brand" onclick="addLink()">
+              <i class="fa-solid fa-link"></i><span>Save Links</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel status">
+          <i class="fa-regular fa-circle-question"></i>
+          <span id="statusText">Load a link to get started.</span>
+        </div>
+      </section>
+
+      <!-- Viewer -->
+      <section class="panel viewer">
+        <div class="viewer-head">
+          <button class="btn success" onclick="refreshIframe()" title="Refresh iframe (R)">
+            <i class="fa-solid fa-rotate-right"></i><span>Refresh</span>
+          </button>
+          <button class="btn success" onclick="nextLink()" title="Next unvisited (N)">
+            <span>Next</span><i class="fa-solid fa-forward-step"></i>
+          </button>
+        </div>
+        <iframe id="preview" src="" loading="lazy" title="Website preview"></iframe>
+      </section>
     </main>
   </div>
 
-  <!-- Hidden Translate Widget -->
-  <div id="google_translate_element" class="hidden"></div>
-
-  <script src="script.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
