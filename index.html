@@ -1,59 +1,127 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scouting Dashboard</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FHG Wix Scouting Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+  <!-- Font Awesome for extra icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 </head>
 <body>
   <header class="topbar">
-    <h1 class="sologan">FHG Wix Scoutier</h1>
+    <button class="icon-btn ghost" id="sidebarToggle" title="Toggle sidebar">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <h1 class="sologan">FHG Wix Scouting Dashboard</h1>
+    <div class="topbar-actions">
+      <div class="theme-toggle" title="Toggle dark mode">
+        <input type="checkbox" id="themeSwitch" />
+        <label for="themeSwitch">
+          <i class="fa-regular fa-sun"></i>
+          <i class="fa-solid fa-moon"></i>
+        </label>
+      </div>
+    </div>
   </header>
 
   <div class="layout">
     <!-- Sidebar -->
-    <div class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <h2>Saved Links</h2>
-        <span class="counter">0 / 0 links scouted</span>
+        <div class="header-row">
+          <h2>Saved Links</h2>
+          <span class="counter">0 / 0</span>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-wrap">
+          <div class="progress-bar"><span id="progressFill" style="width:0%"></span></div>
+          <div class="progress-meta">
+            <span id="progressText">0% completed</span>
+          </div>
+        </div>
+
+        <!-- Search + Filters -->
+        <div class="filter-row">
+          <div class="input-icon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="searchInput" type="text" placeholder="Search links..." />
+          </div>
+          <select id="visitedFilter" title="Visited filter">
+            <option value="all">All</option>
+            <option value="not">Not visited</option>
+            <option value="yes">Visited</option>
+          </select>
+          <select id="tagFilter" title="Filter by tag">
+            <option value="all">All tags</option>
+          </select>
+        </div>
+
+        <!-- Actions -->
         <div class="sidebar-actions">
-          <button class="danger" onclick="deleteAllLinks()">
-            <span class="material-icons">delete_forever</span> Delete All
-          </button>
-          <button class="primary" onclick="exportLinks()">
-            <span class="material-icons">file_download</span> Export
-          </button>
-          <label class="primary import-btn">
-            <span class="material-icons">file_upload</span> Import
-            <input type="file" id="importFile" accept=".json,.txt,.pdf" hidden onchange="importLinks(event)">
-          </label>
+          <div class="button-grid">
+            <button class="danger" onclick="deleteAllLinks()">
+              <span class="material-icons">delete_forever</span> Delete All
+            </button>
+            <button class="primary" onclick="exportLinksTXT()" title="Export remaining as .txt">
+              <i class="fa-solid fa-file-arrow-down"></i> Export TXT
+            </button>
+            <button class="primary" onclick="exportLinksJSON()" title="Export all as .json">
+              <i class="fa-solid fa-file-code"></i> Export JSON
+            </button>
+            <label class="primary import-btn" title="Import .json, .txt, .pdf">
+              <i class="fa-solid fa-file-arrow-up"></i> Import
+              <input type="file" id="importFile" accept=".json,.txt,.pdf" hidden onchange="importLinks(event)">
+            </label>
+          </div>
         </div>
       </div>
+
+      <!-- Status / tips -->
+      <div class="status-card" id="statusCard">
+        <i class="fa-regular fa-circle-question"></i>
+        <span id="statusText">Load a link to get started.</span>
+      </div>
+
       <ul id="linkList" class="link-list"></ul>
-    </div>
+    </aside>
 
     <!-- Main Content -->
     <main class="main">
       <div class="card input-card">
-        <textarea id="urlInput" placeholder="Paste one or multiple links here..."></textarea>
-        <button class="primary" onclick="addLink()">
-          <span class="material-icons">add_link</span> Save Links
-        </button>
+        <div class="grid-2">
+          <div class="stack">
+            <label class="field-label">Links (paste multiple, separated by space or new lines)</label>
+            <textarea id="urlInput" placeholder="https://example.com
+https://another.com"></textarea>
+          </div>
+          <div class="stack">
+            <label class="field-label">Tags (comma separated)</label>
+            <input id="tagsInput" type="text" placeholder="news, research, fhg" />
+            <label class="field-label">Note (optional)</label>
+            <textarea id="noteInput" placeholder="Short description or next action..."></textarea>
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="primary" onclick="addLink()">
+            <span class="material-icons">add_link</span> Save Links
+          </button>
+        </div>
       </div>
 
       <div class="card viewer">
         <div class="viewer-controls">
-          <button onclick="refreshIframe()">
+          <button onclick="refreshIframe()" title="Refresh iframe">
             <span class="material-icons">refresh</span> Refresh
           </button>
-          <button onclick="nextLink()">
+          <button onclick="nextLink()" title="Go to next unvisited">
             Next <span class="material-icons">arrow_forward</span>
           </button>
         </div>
-        <iframe id="preview" src=""></iframe>
+        <iframe id="preview" src="" loading="lazy"></iframe>
       </div>
     </main>
   </div>
