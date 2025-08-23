@@ -1,102 +1,104 @@
-// Dark/Light mode toggle
-const themeToggle = document.getElementById("themeToggle");
-themeToggle.addEventListener("click", () => {
-  document.documentElement.classList.toggle("dark");
-});
-
-// Iframe loading overlay
-const iframe = document.getElementById("iframeDisplay");
-const overlay = document.getElementById("overlay");
-iframe.addEventListener("load", () => {
-  overlay.style.display = "none";
-});
-
-// Toggle iframe boxes
-const toggleBtn = document.getElementById("toggleBoxes");
-let boxesVisible = true;
-toggleBtn.addEventListener("click", () => {
-  const sections = document.querySelectorAll("section:not(:last-child)");
-  boxesVisible = !boxesVisible;
-  sections.forEach(sec => sec.style.display = boxesVisible ? "block" : "none");
-  toggleBtn.innerHTML = boxesVisible
-    ? '<i class="fas fa-eye-slash"></i> Hide Boxes'
-    : '<i class="fas fa-eye"></i> Show Boxes';
-});
-
-// Translate to English
-function translateToEnglish() {
-  const select = document.querySelector("#google_translate_element select");
-  if (select) {
-    select.value = "en";
-    select.dispatchEvent(new Event("change"));
-  }
-}
-
-// Saved links handling
+// Load saved data from localStorage
 let data = JSON.parse(localStorage.getItem("scoutData")) || { links: [] };
-const linkList = document.getElementById("linkList");
+let { links } = data;
 
+const linkList = document.getElementById("linkList");
+const iframeDisplay = document.getElementById("iframeDisplay");
+const urlInput = document.getElementById("urlInput");
+
+// Render saved links
 function renderLinks() {
   linkList.innerHTML = "";
-  data.links.forEach((url, i) => {
-    const li = document.createElement("li");
-    li.className = "flex justify-between items-center p-2 bg-gray-100 dark:bg-gray-700 rounded";
-    li.innerHTML = `<span>${url}</span>
-      <button onclick="removeLink(${i})" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>`;
+  links.forEach((link, index) => {
+    let li = document.createElement("li");
+    li.className = "flex justify-between items-center bg-gray-100 px-2 py-1 rounded";
+    li.innerHTML = `
+      <span class="truncate w-40 cursor-pointer text-blue-600 hover:underline">${link}</span>
+      <button class="text-red-500 hover:text-red-700"><i class="fa-solid fa-xmark"></i></button>
+    `;
+    li.querySelector("span").onclick = () => loadIframe(link);
+    li.querySelector("button").onclick = () => removeLink(index);
     linkList.appendChild(li);
   });
-  localStorage.setItem("scoutData", JSON.stringify(data));
 }
-function removeLink(i) {
-  data.links.splice(i, 1);
-  renderLinks();
+
+// Save to localStorage
+function saveData() {
+  localStorage.setItem("scoutData", JSON.stringify({ links }));
 }
-document.getElementById("addBtn").addEventListener("click", () => {
-  const url = document.getElementById("urlInput").value.trim();
+
+// Load URL in iframe
+function loadIframe(url) {
+  if (!url.startsWith("http")) url = "https://" + url;
+  iframeDisplay.src = url;
+}
+
+// Add new link
+document.getElementById("addBtn").onclick = () => {
+  let url = urlInput.value.trim();
   if (url) {
-    data.links.push(url);
+    links.push(url);
+    saveData();
     renderLinks();
-    iframe.src = url;
+    loadIframe(url);
+    urlInput.value = "";
   }
-});
-document.getElementById("clearBtn").addEventListener("click", () => {
-  data.links = [];
+};
+
+// Remove link
+function removeLink(index) {
+  links.splice(index, 1);
+  saveData();
   renderLinks();
-});
-document.getElementById("refreshBtn").addEventListener("click", () => iframe.contentWindow.location.reload());
-document.getElementById("nextBtn").addEventListener("click", () => {
-  if (data.links.length > 0) {
-    const next = data.links.shift();
-    data.links.push(next);
-    iframe.src = next;
-    renderLinks();
-  }
-});
-document.getElementById("exportBtn").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+}
+
+// Clear all
+document.getElementById("clearBtn").onclick = () => {
+  links = [];
+  saveData();
+  renderLinks();
+};
+
+// Export links
+document.getElementById("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify({ links }, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "scoutData.json";
+  a.download = "links.json";
   a.click();
   URL.revokeObjectURL(url);
-});
-document.getElementById("importFile").addEventListener("change", (e) => {
+};
+
+// Import links
+document.getElementById("importFile").onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = (event) => {
     try {
-      const imported = JSON.parse(reader.result);
+      let imported = JSON.parse(event.target.result);
       if (imported.links) {
-        data.links = imported.links;
+        links = [...links, ...imported.links];
+        saveData();
         renderLinks();
       }
-    } catch (err) {
-      alert("Invalid file format");
+    } catch {
+      alert("Invalid file format.");
     }
   };
   reader.readAsText(file);
-});
+};
 
+// Translate button (simulate clicking Google widget)
+document.getElementById("translateBtn").onclick = () => {
+  let frame = document.querySelector("iframe");
+  if (frame) {
+    alert("Google Translate will translate this page into English. Look at the top bar.");
+    document.querySelector("#google_translate_element select")?.value = "en";
+    document.querySelector("#google_translate_element select")?.dispatchEvent(new Event("change"));
+  }
+};
+
+// Initial render
 renderLinks();
