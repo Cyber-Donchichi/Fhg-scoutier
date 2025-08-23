@@ -2,25 +2,26 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>FHG Wix Scouting Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 </head>
 <body>
   <!-- Topbar -->
   <header class="topbar">
-    <button class="icon-btn ghost" id="sidebarToggle" title="Toggle sidebar">
+    <button class="icon ghost" id="sidebarToggle" aria-label="Toggle sidebar">
       <i class="fa-solid fa-bars"></i>
     </button>
-    <h1 class="brand">FHG Wix Scouting Dashboard</h1>
-
+    <div class="brand">
+      <div class="logo">FHG</div>
+      <h1>Wix Scouting Dashboard</h1>
+    </div>
     <div class="top-actions">
-      <div class="kbd-hint" title="Shortcuts: N = Next, R = Refresh">N / R</div>
-      <div class="theme-toggle" title="Dark / Light">
-        <input type="checkbox" id="themeSwitch" />
+      <div class="kbd" title="Shortcuts: N = Next, R = Refresh">N / R</div>
+      <div class="theme-toggle" title="Toggle dark / light">
+        <input type="checkbox" id="themeSwitch" aria-label="Dark mode"/>
         <label for="themeSwitch">
           <i class="fa-regular fa-sun"></i>
           <i class="fa-solid fa-moon"></i>
@@ -30,113 +31,113 @@
   </header>
 
   <!-- Split layout -->
-  <div class="split">
+  <div class="layout">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <div class="section">
-        <div class="row between">
-          <h2 class="section-title"><i class="fa-regular fa-bookmark"></i> Saved Links</h2>
+      <div class="panel">
+        <div class="panel-head">
+          <h2><i class="fa-regular fa-bookmark"></i> Saved Links</h2>
           <span class="counter">0 / 0</span>
         </div>
 
         <div class="button-grid">
-          <button class="primary" id="toggleInfoBtn" title="Show/Hide info above iframe">
-            <i class="fa-regular fa-eye-slash" id="toggleInfoIcon"></i> Toggle Info
+          <button class="btn brand" id="toggleInfoBtn" title="Show / Hide info above iframe">
+            <i class="fa-regular fa-eye-slash" id="toggleInfoIcon"></i><span>Toggle Info</span>
           </button>
-          <button class="accent" onclick="nextLink()" title="Next unvisited (N)">
-            <i class="fa-solid fa-forward-step"></i> Next
+          <button class="btn success" onclick="nextLink()" title="Next unvisited (N)">
+            <i class="fa-solid fa-forward-step"></i><span>Next</span>
           </button>
-          <button class="accent" onclick="refreshIframe()" title="Refresh iframe (R)">
-            <i class="fa-solid fa-rotate-right"></i> Refresh
+          <button class="btn success" onclick="refreshIframe()" title="Refresh iframe (R)">
+            <i class="fa-solid fa-rotate-right"></i><span>Refresh</span>
           </button>
-          <label class="primary import-btn" title="Import .json, .txt, .pdf">
-            <i class="fa-solid fa-file-arrow-up"></i> Import
+          <label class="btn brand import" title="Import .json, .txt, .pdf">
+            <i class="fa-solid fa-file-arrow-up"></i><span>Import</span>
             <input type="file" id="importFile" accept=".json,.txt,.pdf" hidden onchange="importLinks(event)">
           </label>
-          <button class="primary" onclick="exportLinksTXT()" title="Export remaining as .txt">
-            <i class="fa-solid fa-file-arrow-down"></i> Export TXT
+          <button class="btn brand" onclick="exportLinksTXT()" title="Export remaining as .txt">
+            <i class="fa-solid fa-file-arrow-down"></i><span>Export TXT</span>
           </button>
-          <button class="primary" onclick="exportLinksJSON()" title="Export all as .json">
-            <i class="fa-solid fa-file-code"></i> Export JSON
+          <button class="btn brand" onclick="exportLinksJSON()" title="Export all as .json">
+            <i class="fa-solid fa-file-code"></i><span>Export JSON</span>
           </button>
-          <button class="danger" onclick="deleteAllLinks()">
-            <i class="fa-solid fa-trash"></i> Delete All
+          <button class="btn danger" onclick="deleteAllLinks()">
+            <i class="fa-solid fa-trash"></i><span>Delete All</span>
           </button>
         </div>
       </div>
 
-      <div class="section">
+      <div class="panel">
         <div class="progress">
           <div class="bar"><span id="progressFill" style="width:0%"></span></div>
           <div class="meta">
-            <span class="muted" id="progressText">0% completed</span>
+            <span id="progressText">0% completed</span>
           </div>
         </div>
       </div>
 
-      <div class="section">
+      <div class="panel">
         <div class="filters">
           <div class="input-icon">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="searchInput" type="text" placeholder="Search links, notes, tags..." />
           </div>
-          <select id="visitedFilter">
+          <select id="visitedFilter" aria-label="Visited filter">
             <option value="all">All</option>
             <option value="not">Not visited</option>
             <option value="yes">Visited</option>
           </select>
-          <select id="tagFilter">
+          <select id="tagFilter" aria-label="Tag filter">
             <option value="all">All tags</option>
           </select>
         </div>
       </div>
 
-      <ul id="linkList" class="link-list"></ul>
+      <ul id="linkList" class="link-list" aria-live="polite"></ul>
     </aside>
 
-    <!-- Main column -->
+    <!-- Main -->
     <main class="main">
-      <!-- Info panel (auto hides on iframe load) -->
-      <div id="infoPanel" class="info-panel">
-        <div class="card">
-          <div class="grid-2">
+      <!-- Info area (auto-hide) -->
+      <section id="infoPanel" class="info">
+        <div class="panel">
+          <div class="grid">
             <div class="stack">
-              <label class="field-label">Links (paste multiple, newline/space separated)</label>
+              <label class="label">Links (paste multiple, newline/space separated)</label>
               <textarea id="urlInput" placeholder="https://example.com
 https://another.com"></textarea>
             </div>
             <div class="stack">
-              <label class="field-label">Tags (comma separated)</label>
-              <input id="tagsInput" type="text" placeholder="news, research, fhg" />
-              <label class="field-label">Note</label>
+              <label class="label">Tags (comma separated)</label>
+              <input id="tagsInput" type="text" placeholder="news, research, fhg"/>
+              <label class="label">Note</label>
               <textarea id="noteInput" placeholder="Short note or next action..."></textarea>
             </div>
           </div>
-          <div class="actions-row">
-            <button class="primary" onclick="addLink()">
-              <span class="material-icons">add_link</span> Save Links
+          <div class="actions">
+            <button class="btn brand" onclick="addLink()">
+              <i class="fa-solid fa-link"></i><span>Save Links</span>
             </button>
           </div>
         </div>
 
-        <div class="status card" id="statusCard">
+        <div class="panel status">
           <i class="fa-regular fa-circle-question"></i>
           <span id="statusText">Load a link to get started.</span>
         </div>
-      </div>
+      </section>
 
       <!-- Viewer -->
-      <div class="viewer card">
-        <div class="viewer-controls">
-          <button class="accent" onclick="refreshIframe()" title="Refresh iframe (R)">
-            <span class="material-icons">refresh</span> Refresh
+      <section class="panel viewer">
+        <div class="viewer-head">
+          <button class="btn success" onclick="refreshIframe()" title="Refresh iframe (R)">
+            <i class="fa-solid fa-rotate-right"></i><span>Refresh</span>
           </button>
-          <button class="accent" onclick="nextLink()" title="Next unvisited (N)">
-            Next <span class="material-icons">arrow_forward</span>
+          <button class="btn success" onclick="nextLink()" title="Next unvisited (N)">
+            <span>Next</span><i class="fa-solid fa-forward-step"></i>
           </button>
         </div>
-        <iframe id="preview" src="" loading="lazy"></iframe>
-      </div>
+        <iframe id="preview" src="" loading="lazy" title="Website preview"></iframe>
+      </section>
     </main>
   </div>
 
