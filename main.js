@@ -1,103 +1,245 @@
-let data = JSON.parse(localStorage.getItem("scoutData")) || { links: [], visited: [] };
-let { links, visited } = data;
+/**********************
+ * Storage & Migration
+ **********************/
+const RAW = JSON.parse(localStorage.getItem("scoutData")) || { links: [], visited: [] };
 
+// New shape: links = [{url, visited, tags:[], note:"", title:""}]
+let links = [];
+if (Array.isArray(RAW.links) && RAW.links.length && typeof RAW.links[0] === "string") {
+  // migrate old format (strings + visited indices)
+  const visitedIdx = Array.isArray(RAW.visited) ? RAW.visited : [];
+  links = RAW.links.map((u, i) => ({
+    url: u,
+    visited: visitedIdx.includes(i),
+    tags: [],
+    note: "",
+    title: ""
+  }));
+} else if (Array.isArray(RAW.links)) {
+  links = RAW.links.map(item => ({
+    url: item.url,
+    visited: !!item.visited,
+    tags: Array.isArray(item.tags) ? item.tags : [],
+    note: item.note || "",
+    title: item.title || ""
+  }));
+} else {
+  links = [];
+}
+
+function persist() {
+  localStorage.setItem("scoutData", JSON.stringify({ links }));
+}
+
+/**********************
+ * Elements & State
+ **********************/
 const linkList = document.getElementById("linkList");
 const preview = document.getElementById("preview");
 const counterEl = document.querySelector(".counter");
+const progressFill = document.getElementById("progressFill");
+const progressText = document.getElementById("progressText");
+const statusText = document.getElementById("statusText");
+const sidebar = document.getElementById("sidebar");
+
+const searchInput = document.getElementById("searchInput");
+const visitedFilter = document.getElementById("visitedFilter");
+const tagFilter = document.getElementById("tagFilter");
+
 let currentIndex = -1;
 
-function saveData() {
-  localStorage.setItem("scoutData", JSON.stringify({ links, visited }));
+/**********************
+ * Helpers
+ **********************/
+function updateStats() {
+  const visitedCount = links.filter(l => l.visited).length;
+  counterEl.textContent = `${visitedCount} / ${links.length}`;
+  const pct = links.length ? Math.round((visitedCount / links.length) * 100) : 0;
+  progressFill.style.width = `${pct}%`;
+  progressText.textContent = `${pct}% completed`;
 }
 
+function hostnameFromUrl(u){
+  try { return new URL(u).hostname; } catch { return u; }
+}
+
+function collectAllTags() {
+  const set = new Set();
+  links.forEach(l => (l.tags || []).forEach(t => set.add(t)));
+  return Array.from(set).sort((a,b)=>a.localeCompare(b));
+}
+
+function applyTagFilterOptions(){
+  const all = collectAllTags();
+  const current = tagFilter.value;
+  tagFilter.innerHTML = `<option value="all">All tags</option>` + all.map(t=>`<option value="${t}">${t}</option>`).join("");
+  if ([...tagFilter.options].some(o=>o.value===current)) tagFilter.value = current;
+}
+
+/**********************
+ * Rendering
+ **********************/
 function renderLinks() {
   linkList.innerHTML = "";
-  
-  links.forEach((url, index) => {
+
+  const q = (searchInput.value || "").toLowerCase().trim();
+  const vMode = visitedFilter.value; // all | yes | not
+  const tagMode = tagFilter.value;   // all or tag
+
+  links.forEach((link, index) => {
+    // filtering
+    if (vMode === "yes" && !link.visited) return;
+    if (vMode === "not" && link.visited) return;
+    if (tagMode !== "all" && !(link.tags || []).includes(tagMode)) return;
+
+    const hay = `${link.url} ${link.title || ""} ${link.note || ""} ${(link.tags||[]).join(" ")}`.toLowerCase();
+    if (q && !hay.includes(q)) return;
+
     const li = document.createElement("li");
-    li.textContent = url;
-    
-    if (visited.includes(index)) {
-      li.classList.add("visited");
-    } else {
-      li.onclick = () => openLink(index);
-    }
-    
-    if (index === currentIndex) li.classList.add("active");
+    li.className = "link-item" + (index === currentIndex ? " active" : "") + (link.visited ? " visited" : "");
+    li.onclick = () => openLink(index);
+
+    const icon = document.createElement("div");
+    icon.className = "icon-small";
+    icon.innerHTML = link.visited ? `<i class="fa-regular fa-circle-check"></i>` : `<i class="fa-regular fa-circle"></i>`;
+
+    const main = document.createElement("div");
+    main.className = "link-main";
+
+    const title = document.createElement("div");
+    title.className = "link-title";
+    title.textContent = link.title || hostnameFromUrl(link.url);
+
+    const meta = document.createElement("div");
+    meta.className = "link-meta";
+    meta.textContent = link.url;
+
+    const badges = document.createElement("div");
+    badges.className = "tag-badges";
+    (link.tags || []).forEach(t => {
+      const b = document.createElement("span");
+      b.className = "tag";
+      b.textContent = t;
+      badges.appendChild(b);
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "link-actions";
+    // Quick controls (stop propagation to not open immediately)
+    const openBtn = document.createElement("button");
+    openBtn.className = "icon-small";
+    openBtn.innerHTML = `<i class="fa-solid fa-up-right-from-square"></i>`;
+    openBtn.title = "Open in new tab";
+    openBtn.onclick = (e)=>{ e.stopPropagation(); window.open(link.url, "_blank"); };
+
+    const toggleVisited = document.createElement("button");
+    toggleVisited.className = "icon-small";
+    toggleVisited.innerHTML = link.visited ? `<i class="fa-solid fa-rotate-left"></i>` : `<i class="fa-solid fa-check"></i>`;
+    toggleVisited.title = link.visited ? "Mark unvisited" : "Mark visited";
+    toggleVisited.onclick = (e)=>{
+      e.stopPropagation();
+      link.visited = !link.visited;
+      persist(); renderAll();
+    };
+
+    actions.appendChild(openBtn);
+    actions.appendChild(toggleVisited);
+
+    main.appendChild(title);
+    main.appendChild(meta);
+    if ((link.tags||[]).length) main.appendChild(badges);
+
+    li.appendChild(icon);
+    li.appendChild(main);
+    li.appendChild(actions);
+
     linkList.appendChild(li);
   });
-  
-  updateCounter();
+
+  updateStats();
+  applyTagFilterOptions();
 }
 
-function updateCounter() {
-  counterEl.textContent = `${visited.length} / ${links.length} links scouted`;
-}
-
+/**********************
+ * Actions
+ **********************/
 function addLink() {
   const input = document.getElementById("urlInput");
-  const raw = input.value.trim();
-  if (raw) {
-    const newLinks = raw.split(/[\n,\s]+/).map(l => {
-      if (!l.startsWith("http://") && !l.startsWith("https://")) {
-        return "https://" + l;
-      }
-      return l;
-    });
-    newLinks.forEach(url => {
-      if (!links.includes(url)) links.push(url);
-    });
-    saveData();
-    renderLinks();
-  }
+  const tagsRaw = (document.getElementById("tagsInput").value || "").trim();
+  const noteRaw = (document.getElementById("noteInput").value || "").trim();
+
+  const tags = tagsRaw ? tagsRaw.split(",").map(t=>t.trim()).filter(Boolean) : [];
+
+  const raw = (input.value || "").trim();
+  if (!raw) { return; }
+
+  const newLinks = raw.split(/[\n,\s]+/).map(l => {
+    if (!l) return null;
+    if (!/^https?:\/\//i.test(l)) return "https://" + l;
+    return l;
+  }).filter(Boolean);
+
+  newLinks.forEach(url => {
+    if (!links.some(x => x.url === url)) {
+      links.push({ url, visited:false, tags:[...tags], note:noteRaw, title:"" });
+    }
+  });
+
+  persist();
+  renderAll();
   input.value = "";
+  // keep tags/note inputs for next batch if desired
 }
 
 function openLink(index) {
-  if (!visited.includes(index)) {
-    preview.src = links[index];
-    currentIndex = index;
-    visited.push(index);
-    saveData();
-    renderLinks();
-    checkReset();
+  currentIndex = index;
+  preview.classList.add("loading");
+  preview.src = links[index].url;
+
+  // mark visited
+  if (!links[index].visited) {
+    links[index].visited = true;
+    persist();
   }
+  renderLinks();
 }
 
 function nextLink() {
   for (let i = currentIndex + 1; i < links.length; i++) {
-    if (!visited.includes(i)) return openLink(i);
+    if (!links[i].visited) { openLink(i); return; }
   }
+  // if none left, show status
+  statusText.textContent = "All links visited. Great job!";
 }
 
 function refreshIframe() {
-  if (preview.src) {
-    preview.src = preview.src; // reload iframe
-  }
+  if (preview.src) preview.src = preview.src;
 }
 
 function deleteAllLinks() {
-  if (confirm("Delete ALL links?")) {
-    links = [];
-    visited = [];
-    localStorage.removeItem("scoutData");
-    preview.src = "";
-    currentIndex = -1;
-    renderLinks();
-  }
+  if (!confirm("Delete ALL links?")) return;
+  links = [];
+  currentIndex = -1;
+  preview.src = "";
+  persist();
+  renderAll();
 }
 
-function exportLinks() {
-  const remaining = links.filter((_, i) => !visited.includes(i));
-  const textContent = remaining.join("\n"); // each link on new line
+function exportLinksTXT() {
+  const remaining = links.filter(l => !l.visited).map(l => l.url);
+  const textContent = remaining.join("\n");
   const blob = new Blob([textContent], { type: "text/plain" });
   const url = URL.createObjectURL(blob);
-  
   const a = document.createElement("a");
-  a.href = url;
-  a.download = "scouted_links.txt"; // Save as TXT
-  a.click();
-  
+  a.href = url; a.download = "scouted_links.txt"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportLinksJSON() {
+  const blob = new Blob([JSON.stringify({links}, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "scouted_links.json"; a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -105,87 +247,136 @@ function importLinks(event) {
   const file = event.target.files[0];
   if (!file) return;
 
+  const ext = file.name.split(".").pop().toLowerCase();
   const reader = new FileReader();
-  const ext = file.name.split('.').pop().toLowerCase();
 
-  reader.onload = e => {
+  reader.onload = (e) => {
     try {
       let imported = [];
-
       if (ext === "json") {
-        imported = JSON.parse(e.target.result);
-        if (!Array.isArray(imported)) throw new Error("Invalid JSON format");
-      } 
-      else if (ext === "txt" || ext === "pdf") {
-        imported = e.target.result.split(/[\n,\s]+/).filter(Boolean);
+        const parsed = JSON.parse(e.target.result);
+        if (Array.isArray(parsed)) {
+          // simple array of urls
+          imported = parsed.map(u => ({ url: normalizeUrl(u), visited:false, tags:[], note:"", title:"" }));
+        } else if (parsed && Array.isArray(parsed.links)) {
+          // our shape
+          imported = parsed.links.map(l => ({
+            url: normalizeUrl(l.url || l),
+            visited: !!l.visited,
+            tags: Array.isArray(l.tags) ? l.tags : [],
+            note: l.note || "",
+            title: l.title || ""
+          }));
+        } else {
+          throw new Error("Invalid JSON format");
+        }
+      } else if (ext === "txt" || ext === "pdf") {
+        // basic text extraction for PDF; not extracting embedded URLs specifically
+        const arr = e.target.result.split(/[\n,\s]+/).filter(Boolean);
+        imported = arr.map(u => ({ url: normalizeUrl(u), visited:false, tags:[], note:"", title:"" }));
       }
 
-      imported.forEach(url => {
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-          url = "https://" + url;
+      // merge unique
+      imported.forEach(item => {
+        if (item && item.url && !links.some(x=>x.url===item.url)) {
+          links.push(item);
         }
-        if (!links.includes(url)) links.push(url);
       });
 
-      saveData();
-      renderLinks();
+      persist();
+      renderAll();
       alert("Links imported successfully!");
     } catch (err) {
       console.error(err);
       alert("Error importing file.");
+    } finally {
+      event.target.value = ""; // reset
     }
   };
 
+  // read as text for all allowed types (PDF text content included)
   reader.readAsText(file);
 }
 
-function checkReset() {
-  if (visited.length >= links.length && links.length > 0) {
-    visited = [];
-    saveData();
-    renderLinks();
-    alert("All links scouted! Resetting for a new round.");
-  }
+function normalizeUrl(u){
+  if (!u) return "";
+  let s = String(u).trim();
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  return s;
 }
 
-// Status display for iframe
-const statusEl = document.createElement("div");
-statusEl.style.padding = "6px";
-statusEl.style.fontSize = "14px";
-statusEl.style.color = "#555";
-document.querySelector(".sidebar").appendChild(statusEl);
+/**********************
+ * Theme + Sidebar
+ **********************/
+const themeSwitch = document.getElementById("themeSwitch");
+const savedTheme = localStorage.getItem("fhg_theme") || "light";
+document.documentElement.setAttribute("data-theme", savedTheme);
+themeSwitch.checked = savedTheme === "dark";
 
-preview.addEventListener("load", () => {
-  try {
-    const doc = preview.contentDocument || preview.contentWindow.document;
-    if (!doc) return;
-    
-    statusEl.textContent = "";
-    
-    if (locationMatchesContact(preview.src)) {
-      statusEl.textContent = "On contact page";
-      return;
-    }
-    
-    const linksOnPage = [...doc.querySelectorAll("a")];
-    const contactLink = linksOnPage.find(link =>
-      /contact/i.test(link.textContent) || /contact/i.test(link.href)
-    );
-    
-    if (contactLink) {
-      statusEl.textContent = "Jumping to contact page...";
-      preview.src = contactLink.href;
-    } else {
-      statusEl.textContent = "No contact link detected";
-    }
-  } catch (err) {
-    console.log("Cross-domain restriction:", err.message);
-    console.log("Contact page may exist (cannot check)");
-  }
+themeSwitch.addEventListener("change", () => {
+  const mode = themeSwitch.checked ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", mode);
+  localStorage.setItem("fhg_theme", mode);
 });
 
-function locationMatchesContact(url) {
-  return /contact/i.test(url);
-}
+document.getElementById("sidebarToggle").addEventListener("click", () => {
+  sidebar.classList.toggle("collapsed");
+});
 
-renderLinks();
+/**********************
+ * Iframe handling
+ **********************/
+preview.addEventListener("load", () => {
+  preview.classList.remove("loading");
+  const i = currentIndex;
+  if (i < 0 || !links[i]) return;
+
+  // Try to grab title if same-origin allowed; fallback to hostname
+  try {
+    const doc = preview.contentDocument || preview.contentWindow.document;
+    if (doc && doc.title) {
+      links[i].title = doc.title.trim().slice(0, 120);
+      persist();
+      renderLinks();
+      statusText.textContent = "Loaded: " + (links[i].title || hostnameFromUrl(links[i].url));
+      return;
+    }
+  } catch (err) {
+    // cross-domain, ignore
+  }
+  statusText.textContent = "Loaded: " + hostnameFromUrl(links[i].url);
+});
+
+// If site blocks iframe entirely, optionally auto-open
+setTimeout(() => {
+  // noop by default; uncomment to enable fallback
+  // if (!preview.contentDocument && preview.src) window.open(preview.src, "_blank");
+}, 1500);
+
+/**********************
+ * Filters bindings
+ **********************/
+[searchInput, visitedFilter, tagFilter].forEach(el => {
+  el.addEventListener("input", renderLinks);
+  el.addEventListener("change", renderLinks);
+});
+
+/**********************
+ * Keyboard Shortcuts
+ *  N: next unvisited
+ *  R: refresh iframe
+ **********************/
+document.addEventListener("keydown", (e)=>{
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+  if (e.key.toLowerCase() === "n") nextLink();
+  if (e.key.toLowerCase() === "r") refreshIframe();
+});
+
+/**********************
+ * Init
+ **********************/
+function renderAll(){
+  applyTagFilterOptions();
+  renderLinks();
+}
+renderAll();
