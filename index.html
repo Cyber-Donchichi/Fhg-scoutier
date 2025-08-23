@@ -2,22 +2,24 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>FHG Wix Scouting Dashboard</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
-  <!-- Font Awesome for extra icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 </head>
 <body>
+  <!-- Topbar -->
   <header class="topbar">
     <button class="icon-btn ghost" id="sidebarToggle" title="Toggle sidebar">
       <i class="fa-solid fa-bars"></i>
     </button>
-    <h1 class="sologan">FHG Wix Scouting Dashboard</h1>
-    <div class="topbar-actions">
-      <div class="theme-toggle" title="Toggle dark mode">
+    <h1 class="brand">FHG Wix Scouting Dashboard</h1>
+
+    <div class="top-actions">
+      <div class="kbd-hint" title="Shortcuts: N = Next, R = Refresh">N / R</div>
+      <div class="theme-toggle" title="Dark / Light">
         <input type="checkbox" id="themeSwitch" />
         <label for="themeSwitch">
           <i class="fa-regular fa-sun"></i>
@@ -27,97 +29,109 @@
     </div>
   </header>
 
-  <div class="layout">
+  <!-- Split layout -->
+  <div class="split">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="header-row">
-          <h2>Saved Links</h2>
+      <div class="section">
+        <div class="row between">
+          <h2 class="section-title"><i class="fa-regular fa-bookmark"></i> Saved Links</h2>
           <span class="counter">0 / 0</span>
         </div>
 
-        <!-- Progress -->
-        <div class="progress-wrap">
-          <div class="progress-bar"><span id="progressFill" style="width:0%"></span></div>
-          <div class="progress-meta">
-            <span id="progressText">0% completed</span>
-          </div>
+        <div class="button-grid">
+          <button class="primary" id="toggleInfoBtn" title="Show/Hide info above iframe">
+            <i class="fa-regular fa-eye-slash" id="toggleInfoIcon"></i> Toggle Info
+          </button>
+          <button class="accent" onclick="nextLink()" title="Next unvisited (N)">
+            <i class="fa-solid fa-forward-step"></i> Next
+          </button>
+          <button class="accent" onclick="refreshIframe()" title="Refresh iframe (R)">
+            <i class="fa-solid fa-rotate-right"></i> Refresh
+          </button>
+          <label class="primary import-btn" title="Import .json, .txt, .pdf">
+            <i class="fa-solid fa-file-arrow-up"></i> Import
+            <input type="file" id="importFile" accept=".json,.txt,.pdf" hidden onchange="importLinks(event)">
+          </label>
+          <button class="primary" onclick="exportLinksTXT()" title="Export remaining as .txt">
+            <i class="fa-solid fa-file-arrow-down"></i> Export TXT
+          </button>
+          <button class="primary" onclick="exportLinksJSON()" title="Export all as .json">
+            <i class="fa-solid fa-file-code"></i> Export JSON
+          </button>
+          <button class="danger" onclick="deleteAllLinks()">
+            <i class="fa-solid fa-trash"></i> Delete All
+          </button>
         </div>
+      </div>
 
-        <!-- Search + Filters -->
-        <div class="filter-row">
-          <div class="input-icon">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="searchInput" type="text" placeholder="Search links..." />
-          </div>
-          <select id="visitedFilter" title="Visited filter">
-            <option value="all">All</option>
-            <option value="not">Not visited</option>
-            <option value="yes">Visited</option>
-          </select>
-          <select id="tagFilter" title="Filter by tag">
-            <option value="all">All tags</option>
-          </select>
-        </div>
-
-        <!-- Actions -->
-        <div class="sidebar-actions">
-          <div class="button-grid">
-            <button class="danger" onclick="deleteAllLinks()">
-              <span class="material-icons">delete_forever</span> Delete All
-            </button>
-            <button class="primary" onclick="exportLinksTXT()" title="Export remaining as .txt">
-              <i class="fa-solid fa-file-arrow-down"></i> Export TXT
-            </button>
-            <button class="primary" onclick="exportLinksJSON()" title="Export all as .json">
-              <i class="fa-solid fa-file-code"></i> Export JSON
-            </button>
-            <label class="primary import-btn" title="Import .json, .txt, .pdf">
-              <i class="fa-solid fa-file-arrow-up"></i> Import
-              <input type="file" id="importFile" accept=".json,.txt,.pdf" hidden onchange="importLinks(event)">
-            </label>
+      <div class="section">
+        <div class="progress">
+          <div class="bar"><span id="progressFill" style="width:0%"></span></div>
+          <div class="meta">
+            <span class="muted" id="progressText">0% completed</span>
           </div>
         </div>
       </div>
 
-      <!-- Status / tips -->
-      <div class="status-card" id="statusCard">
-        <i class="fa-regular fa-circle-question"></i>
-        <span id="statusText">Load a link to get started.</span>
+      <div class="section">
+        <div class="filters">
+          <div class="input-icon">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="searchInput" type="text" placeholder="Search links, notes, tags..." />
+          </div>
+          <select id="visitedFilter">
+            <option value="all">All</option>
+            <option value="not">Not visited</option>
+            <option value="yes">Visited</option>
+          </select>
+          <select id="tagFilter">
+            <option value="all">All tags</option>
+          </select>
+        </div>
       </div>
 
       <ul id="linkList" class="link-list"></ul>
     </aside>
 
-    <!-- Main Content -->
+    <!-- Main column -->
     <main class="main">
-      <div class="card input-card">
-        <div class="grid-2">
-          <div class="stack">
-            <label class="field-label">Links (paste multiple, separated by space or new lines)</label>
-            <textarea id="urlInput" placeholder="https://example.com
+      <!-- Info panel (auto hides on iframe load) -->
+      <div id="infoPanel" class="info-panel">
+        <div class="card">
+          <div class="grid-2">
+            <div class="stack">
+              <label class="field-label">Links (paste multiple, newline/space separated)</label>
+              <textarea id="urlInput" placeholder="https://example.com
 https://another.com"></textarea>
+            </div>
+            <div class="stack">
+              <label class="field-label">Tags (comma separated)</label>
+              <input id="tagsInput" type="text" placeholder="news, research, fhg" />
+              <label class="field-label">Note</label>
+              <textarea id="noteInput" placeholder="Short note or next action..."></textarea>
+            </div>
           </div>
-          <div class="stack">
-            <label class="field-label">Tags (comma separated)</label>
-            <input id="tagsInput" type="text" placeholder="news, research, fhg" />
-            <label class="field-label">Note (optional)</label>
-            <textarea id="noteInput" placeholder="Short description or next action..."></textarea>
+          <div class="actions-row">
+            <button class="primary" onclick="addLink()">
+              <span class="material-icons">add_link</span> Save Links
+            </button>
           </div>
         </div>
-        <div class="actions-row">
-          <button class="primary" onclick="addLink()">
-            <span class="material-icons">add_link</span> Save Links
-          </button>
+
+        <div class="status card" id="statusCard">
+          <i class="fa-regular fa-circle-question"></i>
+          <span id="statusText">Load a link to get started.</span>
         </div>
       </div>
 
-      <div class="card viewer">
+      <!-- Viewer -->
+      <div class="viewer card">
         <div class="viewer-controls">
-          <button onclick="refreshIframe()" title="Refresh iframe">
+          <button class="accent" onclick="refreshIframe()" title="Refresh iframe (R)">
             <span class="material-icons">refresh</span> Refresh
           </button>
-          <button onclick="nextLink()" title="Go to next unvisited">
+          <button class="accent" onclick="nextLink()" title="Next unvisited (N)">
             Next <span class="material-icons">arrow_forward</span>
           </button>
         </div>
