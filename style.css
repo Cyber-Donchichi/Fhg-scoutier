@@ -181,3 +181,41 @@ iframe.loading{opacity:.55}
   .sidebar{position:absolute;top:56px;bottom:0;left:0;z-index:50;width:320px}
   .grid{grid-template-columns:1fr}
 }
+.link-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.link-item {
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.link-item:hover {
+  background: var(--hover-bg, #f1f1f1);
+}
+
+.link-title {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  color: var(--text-color, #333);
+}
+
+.link-meta {
+  font-size: 0.9rem;
+  color: var(--muted-color, #666);
+}
+
+small {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted-color, #999);
+  margin-top: 4px;
+}
