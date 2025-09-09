@@ -107,7 +107,7 @@ body{
 .btn.brand:hover{filter:brightness(1.05)}
 .btn.success{background:linear-gradient(135deg,var(--success),#47df87)}
 .btn.success:hover{filter:brightness(1.05)}
-.btn.danger{background:linear-gradient(135deg,var(--danger),#ff6b6b)}
+.btn.danger{background:linear-gradient(135deg,var(--danger),#ff6b6b);width:100%;}
 .btn.danger:hover{filter:brightness(1.05)}
 .import{position:relative;overflow:hidden}
 
