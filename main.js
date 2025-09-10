@@ -44,6 +44,43 @@ const tagFilter = document.getElementById("tagFilter");
 let currentIndex = -1;
 
 /***************
+ * Translator (NEW)
+ ***************/
+const translatorWrapper = document.createElement("div");
+translatorWrapper.id = "translatorWrapper";
+
+const translatorLabel = document.createElement("label");
+translatorLabel.setAttribute("for", "languageSelect");
+translatorLabel.textContent = "Translate to: ";
+
+const languageSelect = document.createElement("select");
+languageSelect.id = "languageSelect";
+
+const languages = {
+  en: "English",
+  fr: "French",
+  es: "Spanish",
+  ha: "Hausa",
+  ar: "Arabic",
+  de: "German",
+  zh: "Chinese",
+  hi: "Hindi"
+};
+
+Object.entries(languages).forEach(([code, name])=>{
+  const opt = document.createElement("option");
+  opt.value = code;
+  opt.textContent = name;
+  languageSelect.appendChild(opt);
+});
+
+translatorWrapper.appendChild(translatorLabel);
+translatorWrapper.appendChild(languageSelect);
+
+// Insert translator dropdown into sidebar (at the top)
+sidebar.prepend(translatorWrapper);
+
+/***************
  * Theme & Sidebar
  ***************/
 const themeSwitch = document.getElementById("themeSwitch");
@@ -192,9 +229,13 @@ function addLink(){
 
 function openLink(index){
   currentIndex = index;
-  hideInfoPanel(); // auto-hide when loading starts
+  hideInfoPanel(); 
   preview.classList.add("loading");
-  preview.src = links[index].url;
+
+  // ✅ NEW: wrap with Google Translate
+  const targetLang = document.getElementById("languageSelect")?.value || "en";
+  const originalUrl = links[index].url;
+  preview.src = `https://translate.google.com/translate?sl=auto&tl=${targetLang}&u=${encodeURIComponent(originalUrl)}`;
 
   if (!links[index].visited){ links[index].visited = true; persist(); }
   renderLinks();
