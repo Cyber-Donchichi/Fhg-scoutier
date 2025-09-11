@@ -192,13 +192,9 @@ function addLink(){
 
 function openLink(index){
   currentIndex = index;
-  hideInfoPanel(); 
+  hideInfoPanel(); // auto-hide when loading starts
   preview.classList.add("loading");
-
-  // ✅ Auto-translate (default language = English)
-  const targetLang = "en"; // change this to "fr", "ha", "ar" etc.
-  const originalUrl = links[index].url;
-  preview.src = `https://translate.google.com/translate?sl=auto&tl=${targetLang}&u=${encodeURIComponent(originalUrl)}`;
+  preview.src = links[index].url;
 
   if (!links[index].visited){ links[index].visited = true; persist(); }
   renderLinks();
