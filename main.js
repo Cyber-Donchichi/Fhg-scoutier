@@ -29,7 +29,7 @@ const refreshBtn = document.getElementById("refreshBtn");
 const pasteBtn = document.getElementById("pasteBtn");
 const hiddenInput = document.getElementById("hiddenInput");
 
-let currentIndex = 0;
+let currentIndex = -1;
 let links = [];
 
 // Add links to DB
@@ -61,18 +61,39 @@ function renderLinks() {
   links.forEach((l, i) => {
     const li = document.createElement("li");
     li.textContent = (l.visited ? "✓ " : "") + l.url;
+    li.style.cursor = "pointer";
     if (i === currentIndex) li.style.background = "#333";
+
+    // Click any link
+    li.onclick = () => {
+      if (l.visited) {
+        // Auto-skip visited
+        nextLink();
+      } else {
+        currentIndex = i;
+        loadIframe(l.url);
+        renderLinks();
+      }
+    };
+
     linkList.appendChild(li);
   });
 
-  if (links[currentIndex]) loadIframe(links[currentIndex].url);
+  // Auto-load first unvisited if nothing loaded yet
+  if (currentIndex === -1 && links.length > 0) {
+    const firstUnvisited = links.findIndex(l => !l.visited);
+    if (firstUnvisited !== -1) {
+      currentIndex = firstUnvisited;
+      loadIframe(links[currentIndex].url);
+    }
+  }
 }
 
-// Load iframe with loader + fake Googlebot UA
+// Load iframe with loader + Googlebot trick
 function loadIframe(url) {
   loader.style.display = "block";
 
-  // Create a sandboxed iframe with Googlebot UA spoof
+  // Try to spoof bot access
   const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url); 
   iframe.src = proxyUrl;
 
@@ -103,11 +124,18 @@ function markVisited(url) {
   };
 }
 
-// Next link
+// Go to next unvisited link
 function nextLink() {
-  if (currentIndex < links.length - 1) {
-    currentIndex++;
+  if (links.length === 0) return;
+
+  let nextIndex = links.findIndex((l, i) => i > currentIndex && !l.visited);
+
+  if (nextIndex !== -1) {
+    currentIndex = nextIndex;
+    loadIframe(links[currentIndex].url);
     renderLinks();
+  } else {
+    alert("No more unvisited links left!");
   }
 }
 
@@ -122,7 +150,7 @@ deleteAllBtn.onclick = function() {
   tx.objectStore("links").clear();
   tx.oncomplete = () => {
     links = [];
-    currentIndex = 0;
+    currentIndex = -1;
     renderLinks();
   };
 };
